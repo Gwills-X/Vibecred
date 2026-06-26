@@ -2,6 +2,7 @@ import "./globals.css";
 import { Poppins } from "next/font/google";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import { importMigrationFile } from "@/lib/importSql";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -60,6 +61,7 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  // importMigrationFile();
   return (
     <html lang='en' className='h-full' suppressHydrationWarning>
       <body

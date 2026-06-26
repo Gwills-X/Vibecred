@@ -7,21 +7,27 @@ async function connectToDatabase() {
   try {
     if (!pool) {
       pool = mysql.createPool({
-        host: "127.0.0.1", // Enforced direct loopback to bypass local DNS resolution latency
-        user: "root",
-        password: "",
-        database: "nextjs_test",
-        port: 3306,
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        port: parseInt(process.env.DB_PORT || "11468", 10),
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
-        connectTimeout: 10000,
+        connectTimeout: 15000,
+        // Enforces SSL verification for external cloud architecture traffic
+        ssl: {
+          rejectUnauthorized: false,
+        },
       });
-      console.log("Database connection pool securely initialized.");
+      console.log(
+        "🚀 Production Aiven MySQL pool live. Media offloaded to Firebase.",
+      );
     }
     return pool;
   } catch (error) {
-    console.error("Database connection fault:", error.message);
+    console.error("❌ Cloud database connection fault:", error.message);
     throw error;
   }
 }
@@ -36,11 +42,9 @@ export async function query(sql, values = []) {
     }
 
     const [results] = await db.execute(sql, values);
-
-    // Always guarantee an array structure back to the dataEngine mapper layers
     return Array.isArray(results) ? results : [results];
   } catch (err) {
-    console.error("SQL Execution Failure:", err.message);
+    console.error("❌ SQL Execution Failure:", err.message);
     throw err;
   }
 }

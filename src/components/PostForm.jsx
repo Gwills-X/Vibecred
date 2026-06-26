@@ -3,7 +3,12 @@
 import { useActionState } from "react";
 
 export default function BlogPostForm({ handler }) {
-  const [state, action, isPending] = useActionState(handler, undefined);
+  // Pass an object with empty strings as the initial state so defaultValue doesn't get undefined/null flags
+  const [state, action, isPending] = useActionState(handler, {
+    title: "",
+    content: "",
+    errors: {},
+  });
 
   return (
     <form
@@ -21,7 +26,7 @@ export default function BlogPostForm({ handler }) {
 
       {/* Global Server/Database Error Catch */}
       {state?.errors?.server && (
-        <div className='p-3 text-sm bg-red-500/10 border border-red-500/20 rounded-lg text-red-400'>
+        <div className='p-3 text-sm bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 font-mono'>
           {state.errors.server[0]}
         </div>
       )}
@@ -35,13 +40,18 @@ export default function BlogPostForm({ handler }) {
           type='text'
           id='title'
           name='title'
-          defaultValue={state?.title}
+          defaultValue={state?.title || ""}
           disabled={isPending}
           className='w-full rounded-lg bg-slate-950 border border-slate-800 p-2.5 text-slate-100 outline-none placeholder-slate-600 transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm disabled:opacity-50'
           placeholder='Enter post title'
         />
+        {/* 🌟 FIXED: Pull the first error message string from the array safely */}
         {state?.errors?.title && (
-          <p className='text-red-500 text-sm mt-1'>{state.errors.title}</p>
+          <p className='text-rose-500 text-xs mt-1 font-mono'>
+            {Array.isArray(state.errors.title)
+              ? state.errors.title[0]
+              : state.errors.title}
+          </p>
         )}
       </div>
 
@@ -54,12 +64,17 @@ export default function BlogPostForm({ handler }) {
           id='content'
           name='content'
           rows='6'
-          defaultValue={state?.content}
+          defaultValue={state?.content || ""}
           disabled={isPending}
           className='w-full rounded-lg bg-slate-950 border border-slate-800 p-2.5 text-slate-100 outline-none placeholder-slate-600 transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm resize-none disabled:opacity-50'
           placeholder='Write your post content here...'></textarea>
+        {/* 🌟 FIXED: Pull the first error message string from the array safely */}
         {state?.errors?.content && (
-          <p className='text-red-500 text-sm mt-1'>{state.errors.content}</p>
+          <p className='text-rose-500 text-xs mt-1 font-mono'>
+            {Array.isArray(state.errors.content)
+              ? state.errors.content[0]
+              : state.errors.content}
+          </p>
         )}
       </div>
 
@@ -68,8 +83,8 @@ export default function BlogPostForm({ handler }) {
         <button
           type='submit'
           disabled={isPending}
-          className='w-full sm:w-auto px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-semibold rounded-lg shadow-md transition-colors duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed'>
-          {isPending ? "Creating..." : "Create Post"}
+          className='w-full sm:w-auto px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-semibold rounded-lg shadow-md transition-colors duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed uppercase font-mono tracking-wider'>
+          {isPending ? "Transmitting..." : "Create Post"}
         </button>
       </div>
     </form>

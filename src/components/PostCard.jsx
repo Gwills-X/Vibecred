@@ -13,7 +13,6 @@ export default function PostCard({ post, currentUserId }) {
   const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // 🚀 Native Next.js Optimistic Reducer
   const [optimisticLikeState, setOptimisticLikeState] = useOptimistic(
     { liked: post.hasLiked || false, count: post.likesCount || 0 },
     (state, nextLikedState) => {
@@ -30,15 +29,10 @@ export default function PostCard({ post, currentUserId }) {
     if (post.createdAt) {
       const createdDate = new Date(post.createdAt);
       const currentDate = new Date();
-
       const thirtyMinutesInMs = 30 * 60 * 1000;
       const timeDifference = currentDate.getTime() - createdDate.getTime();
 
-      if (timeDifference >= 0 && timeDifference < thirtyMinutesInMs) {
-        setIsEditable(true);
-      } else {
-        setIsEditable(false);
-      }
+      setIsEditable(timeDifference >= 0 && timeDifference < thirtyMinutesInMs);
     }
   }, [post.createdAt]);
 
@@ -50,18 +44,18 @@ export default function PostCard({ post, currentUserId }) {
       })
     : "";
 
-  // Handle live toggle interaction streams
   const handleLikeClick = async () => {
-    if (!currentUserId)
-      return alert("Authorize your identity matrix to react to pulses.");
+    // 🛡️ Block anonymous interaction
+    if (!currentUserId) {
+      return alert(
+        "Authorize your identity matrix to react to pulses. Please log in.",
+      );
+    }
 
     const targetLikedState = !optimisticLikeState.liked;
 
     startTransition(async () => {
-      // 1. Force the visual layout change instantly across renders
       setOptimisticLikeState(targetLikedState);
-
-      // 2. Wait for background Server Action cache revalidation
       const res = await handleToggleLike(post.id);
       if (!res?.success) {
         alert("Transaction failed to sync. Reverting matrix state.");
@@ -92,7 +86,7 @@ export default function PostCard({ post, currentUserId }) {
       </div>
 
       {/* REACTION & CONTROL ROW CONTAINER */}
-      <div className='pt-4 mt-5 border-t border-slate-900/60 flex flex-col sm:flex-col justify-between gap-4'>
+      <div className='pt-4 mt-5 border-t border-slate-900/60 flex flex-col justify-between gap-4'>
         <div className='flex items-center justify-between gap-4 text-xs font-mono font-bold select-none'>
           {/* LIKE BUTTON ACCENT */}
           <button
@@ -119,9 +113,9 @@ export default function PostCard({ post, currentUserId }) {
             <span>{optimisticLikeState.count}</span>
           </button>
 
-          {/* COMMENT CONTAINER FOOTPRINT */}
+          {/* COMMENT CONTAINER FOOTPRINT (Updated Destination Path) */}
           <Link
-            href={`/posts/${post.id}`}
+            href={`/posts/show/${post.id}`}
             className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950/40 border border-slate-900/60 text-slate-500 hover:text-slate-300 hover:border-slate-800 transition-all'>
             <svg
               className='w-4 h-4'
@@ -142,7 +136,7 @@ export default function PostCard({ post, currentUserId }) {
         {/* NAVIGATION & ACTION PANEL SWITCHES */}
         <div className='flex items-center gap-4 justify-between shrink-0'>
           <Link
-            href={`/posts/show/${post.id}`}
+            href={`/dashboard/post/show/${post.id}`}
             className='text-xs font-extrabold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors'>
             Read Pulse &rarr;
           </Link>
@@ -162,7 +156,11 @@ export default function PostCard({ post, currentUserId }) {
               )}
 
               <button
-                onClick={() => setShowDeleteModal(true)}
+                onClick={() => {
+                  if (!currentUserId)
+                    return alert("Log in to remove content records.");
+                  setShowDeleteModal(true);
+                }}
                 className='text-xs font-mono font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors ml-4 cursor-pointer'>
                 Delete
               </button>

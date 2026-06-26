@@ -61,8 +61,10 @@ export async function fetchMysqlTimeline(currentUserId) {
         p.authorId, 
         p.author AS authorName,
         p.created_at AS createdAt,
-        COUNT(l.post_id) AS likesCount,
-        SUM(CASE WHEN l.user_id = ? THEN 1 ELSE 0 END) AS hasLiked
+        COUNT(DISTINCT l.user_id, l.post_id) AS likesCount,
+        SUM(CASE WHEN l.user_id = ? THEN 1 ELSE 0 END) AS hasLiked,
+        -- 💬 Correlated Subquery to dynamically count child reply rows inside your posts registry
+        (SELECT COUNT(*) FROM posts c WHERE c.parent_id = p.id) AS commentsCount
       FROM posts p
       LEFT JOIN likes l ON p.id = l.post_id
       WHERE p.parent_id IS NULL
@@ -90,6 +92,8 @@ export async function fetchMysqlTimeline(currentUserId) {
       isRepost: false,
       likesCount: Number(row.likesCount || 0),
       hasLiked: Boolean(row.hasLiked > 0),
+      // 💎 Pass down the aggregated calculation key cleanly to your PostCard JSX
+      commentsCount: Number(row.commentsCount || 0),
     }));
   } catch (error) {
     console.error("❌ MySQL Timeline Retrieval Fault:", error.message);
@@ -172,6 +176,49 @@ export async function removeMysqlPost(postId) {
     return await query("DELETE FROM posts WHERE id = ?", [postId]);
   } catch (error) {
     console.error("❌ MySQL Post Deletion Fault:", error.message);
+    throw error;
+  }
+}
+
+export async function fetchMysqlComments() {
+  try {
+    // 💎 Fetches all conversational comment nodes so your front-end tree builder can link them
+    const sql =
+      "SELECT * FROM posts WHERE title IS NULL ORDER BY created_at ASC";
+    const rows = await query(sql);
+    return rows || [];
+  } catch (error) {
+    console.error("❌ MySQL Comments Fetch Fault:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * 🌲 FETCH SINGLE POST TREE REPLIES ONLY
+ * Safely isolates and climbs the comment tree for one specific post branch
+ */
+export async function fetchCommentsByPostId(postId) {
+  try {
+    const sql = `
+      WITH RECURSIVE comment_tree AS (
+        -- 1. Anchor: Get direct comments on this specific post
+        SELECT * FROM posts 
+        WHERE parent_id = ? AND title IS NULL
+        
+        UNION ALL
+        
+        -- 2. Recursive: Get sub-replies pointing to comments already in the tree
+        SELECT p.* FROM posts p
+        INNER JOIN comment_tree ct ON p.parent_id = ct.id
+        WHERE p.title IS NULL
+      )
+      SELECT * FROM comment_tree ORDER BY created_at ASC;
+    `;
+
+    const rows = await query(sql, [postId]);
+    return rows || [];
+  } catch (error) {
+    console.error("❌ MySQL Isolated Comments Fetch Fault:", error.message);
     throw error;
   }
 }
