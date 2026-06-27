@@ -136,7 +136,7 @@ export default function PostCard({ post, currentUserId }) {
         {/* NAVIGATION & ACTION PANEL SWITCHES */}
         <div className='flex items-center gap-4 justify-between shrink-0'>
           <Link
-            href={`/dashboard/post/show/${post.id}`}
+            href={`/posts/show/${post.id}`}
             className='text-xs font-extrabold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors'>
             Read Pulse &rarr;
           </Link>

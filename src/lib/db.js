@@ -41,7 +41,7 @@ export async function query(sql, values = []) {
       );
     }
 
-    const [results] = await db.execute(sql, values);
+    const [results] = await db.query(sql, values);
     return Array.isArray(results) ? results : [results];
   } catch (err) {
     console.error("❌ SQL Execution Failure:", err.message);
