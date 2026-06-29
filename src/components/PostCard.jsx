@@ -64,7 +64,7 @@ export default function PostCard({ post, currentUserId }) {
   };
 
   return (
-    <article className='flex flex-col justify-between rounded-2xl bg-slate-900/40 backdrop-blur-md border border-slate-900 p-6 shadow-xl hover:border-slate-800/80 transition-all group selection:bg-emerald-500/10 selection:text-emerald-400'>
+    <article className='flex flex-col justify-between rounded-2xl bg-slate-900/40 backdrop-blur-md border-2 border-slate-900 p-4 shadow-xl hover:border-slate-800/80 transition-all group selection:bg-emerald-500/10 selection:text-emerald-400'>
       <div className='space-y-3'>
         {/* Author Header Row */}
         <div className='flex items-center justify-between text-xs text-slate-500 font-medium font-mono'>

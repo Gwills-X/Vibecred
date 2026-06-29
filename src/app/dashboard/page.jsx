@@ -39,7 +39,7 @@ export default async function Dashboard() {
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <div className='glass-card p-6 border-white/5'>
+      <div className='glass-card py-6 px-3 border-white/5'>
         {hasPosts ? (
           <div className='space-y-6'>
             <div className='flex justify-between items-center border-b border-white/5 pb-4'>
@@ -48,11 +48,11 @@ export default async function Dashboard() {
               </h2>
             </div>
 
-            <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
+            <div className='grid gap-3 md:grid-cols-2 lg:grid-cols-3'>
               {filteredPosts.map((post) => (
                 <div
                   key={post.id}
-                  className='bg-slate-950/40 border border-white/5 rounded-xl p-4 hover:border-emerald-500/30 transition-all'>
+                  className='bg-slate-950/40 border border-white/5 rounded-xl  hover:border-emerald-500/30 transition-all'>
                   <PostCard post={post} currentUserId={String(user.userId)} />
                 </div>
               ))}

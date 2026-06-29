@@ -72,7 +72,7 @@ export default function RootLayout({ children }) {
         </div>
 
         {/* Main Content Area */}
-        <main className='flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-1 py-8'>
+        <main className='flex-grow w-full max-w-8xl mx-auto px-3 sm:px-2 lg:px-1 py-8'>
           {children}
         </main>
 

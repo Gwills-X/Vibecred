@@ -13,7 +13,7 @@ export default function BlogPostForm({ handler }) {
   return (
     <form
       action={action}
-      className='max-w-2xl mx-auto p-8 bg-slate-900 rounded-2xl shadow-xl border border-slate-800 space-y-6'>
+      className='max-w-2xl mx-auto pt-4 bg-slate-900 rounded-2xl shadow-xl border border-slate-800 space-y-6'>
       {/* Form Header */}
       <div className='space-y-1'>
         <h2 className='text-2xl font-bold tracking-tight text-slate-100'>
