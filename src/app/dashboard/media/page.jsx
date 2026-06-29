@@ -17,7 +17,6 @@ export default function MediaVaultPage() {
             Centralized asset management and binary storage
           </p>
         </div>
-        <DashboardNav />
       </div>
 
       {/* Upload Zone */}

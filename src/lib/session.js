@@ -17,7 +17,7 @@ export async function encrypt(payload) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d") // Standard internal JWT exp registry tracker
+    .setExpirationTime("30m") // Changed from 7d to 30m
     .sign(encodedKey);
 }
 
@@ -34,17 +34,15 @@ export async function decrypt(session) {
 }
 
 export async function createSession(userId) {
-  // 7 Days calculation matched cleanly to cookie expiration requirements
-  const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-  const expiresAt = new Date(Date.now() + sevenDaysInMs);
+  // Update expiration to match 30 minutes
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
-  // Normalize userId to a string to keep database primary key formats matching smoothly
   const session = await encrypt({ userId: String(userId) });
   const cookieStore = await cookies();
 
   cookieStore.set("session", session, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // Adaptive fallback for non-SSL localhost dev environments
+    secure: process.env.NODE_ENV === "production",
     expires: expiresAt,
     sameSite: "lax",
     path: "/",

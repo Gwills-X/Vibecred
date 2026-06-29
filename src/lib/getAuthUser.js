@@ -1,35 +1,34 @@
-import "server-only"; // Enforce server-side execution isolation
+import "server-only";
 import { cookies } from "next/headers";
 import { decrypt } from "./session";
-import { query } from "./db"; // 🚀 Import your query manager
+import { query } from "./db";
 
 export default async function getAuthUser() {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
 
-    if (!sessionCookie) {
-      return null; // Gracefully return null if no token exists
-    }
+    if (!sessionCookie) return null;
 
-    // Attempt to decrypt and unpack the session payload
     const userPayload = await decrypt(sessionCookie);
 
-    if (!userPayload || !userPayload.userId) {
-      return null; // Safety gate for expired or structurally invalid payloads
+    if (!userPayload || !userPayload.userId) return null;
+
+    // 🚀 TIME CHECK: Compare expiration claim against current time
+    // userPayload.exp is usually in seconds, so we multiply by 1000 for ms
+    const now = Math.floor(Date.now() / 1000);
+    if (userPayload.exp && now > userPayload.exp) {
+      console.warn("Session expired. Logging out user.");
+      return null; // Will trigger standard logout/redirect flow
     }
 
-    // 🚀 Fetch full account metadata from your MySQL users table
     const dbUsers = await query(
       "SELECT id, name, email FROM users WHERE id = ?",
       [userPayload.userId],
     );
 
-    if (!dbUsers || dbUsers.length === 0) {
-      return null; // Handle case where cookie exists but user was purged from DB
-    }
+    if (!dbUsers || dbUsers.length === 0) return null;
 
-    // Return the session tracking markers combined with real profile properties!
     return {
       userId: String(dbUsers[0].id),
       name: dbUsers[0].name,
@@ -39,6 +38,6 @@ export default async function getAuthUser() {
     };
   } catch (error) {
     console.error("Session structural check error:", error.message);
-    return null; // Always fallback to a clean falsy state instead of crashing the route
+    return null;
   }
 }

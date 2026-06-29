@@ -1,5 +1,3 @@
-import DashboardNav from "../DashboardNav";
-
 export default function AnalyticsPage() {
   return (
     <div className='max-w-7xl mx-auto space-y-8 py-8 px-4'>
@@ -10,7 +8,6 @@ export default function AnalyticsPage() {
             Understand what resonates with your audience
           </p>
         </div>
-        <DashboardNav />
       </div>
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>

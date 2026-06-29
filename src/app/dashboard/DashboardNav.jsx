@@ -9,27 +9,32 @@ export default function DashboardNav() {
     { name: "Drafts", href: "/dashboard/drafts" },
     { name: "Analytics", href: "/dashboard/analytics" },
     { name: "Media Vault", href: "/dashboard/media" },
-    { name: "Network Pulse", href: "/dashboard/network" },
+    { name: "Network", href: "/dashboard/network" },
     { name: "Settings", href: "/dashboard/settings" },
   ];
 
   return (
-    <div className='flex flex-wrap gap-1 p-1 bg-slate-950/40 rounded-xl border border-white/5 w-fit'>
+    // 'flex-row' for mobile/horizontal, 'lg:flex-col' for desktop sidebar
+    <nav className='flex flex-row lg:flex-col gap-1 p-2 bg-slate-900/50 backdrop-blur-md border border-white/10 rounded-2xl w-full lg:w-64 shadow-2xl overflow-x-auto lg:overflow-visible'>
       {tabs.map((tab) => {
         const isActive = pathname === tab.href;
         return (
           <Link
             key={tab.name}
             href={tab.href}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+            className={`relative flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-300 whitespace-nowrap ${
               isActive
-                ? "bg-emerald-500/20 text-emerald-400"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
+                ? "text-emerald-400 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
             }`}>
             {tab.name}
+            {/* Active Indicator: Side bar on desktop, Bottom underline on mobile */}
+            {isActive && (
+              <span className='absolute lg:left-0 lg:top-3 lg:bottom-3 lg:w-1 lg:h-auto lg:rounded-r-full bottom-1 left-4 right-4 h-0.5 rounded-full bg-emerald-500 animate-in fade-in zoom-in duration-300' />
+            )}
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }

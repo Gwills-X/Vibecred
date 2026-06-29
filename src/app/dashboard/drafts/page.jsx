@@ -1,4 +1,3 @@
-import DashboardNav from "../DashboardNav";
 import Link from "next/link";
 
 export default function DraftsPage() {
@@ -21,7 +20,6 @@ export default function DraftsPage() {
             Staging area for unpublished pulses and logic flows
           </p>
         </div>
-        <DashboardNav />
       </div>
 
       <div className='glass-card p-6 border-emerald-500/10'>

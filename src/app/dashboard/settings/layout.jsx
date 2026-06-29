@@ -1,4 +1,3 @@
-import DashboardNav from "../DashboardNav";
 import Link from "next/link";
 
 export default function SettingsLayout({ children }) {
@@ -11,7 +10,6 @@ export default function SettingsLayout({ children }) {
             Manage your identity and account configuration
           </p>
         </div>
-        <DashboardNav />
       </div>
 
       {/* Settings Sub-Nav */}

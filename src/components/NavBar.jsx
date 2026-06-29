@@ -1,13 +1,13 @@
 import React from "react";
 import NavLinks from "./NavLinks";
-import getAuthUser from "@/lib/getAuthUser";
 import { logout } from "@/actions/auth";
 import MobileMenu from "./MobileMenu";
+import getAuthUser from "@/lib/getAuthUser";
+import { Home, FileText } from "lucide-react"; // Import icons
 
 const NavBar = async () => {
   const authUser = await getAuthUser();
 
-  // Unified link structure helper to reuse layouts cleanly between desktop and mobile buckets
   const LinksMarkup = ({ isMobile = false }) => (
     <ul
       className={`${
@@ -15,7 +15,6 @@ const NavBar = async () => {
           ? "flex flex-col gap-4 text-sm w-full"
           : "hidden md:flex items-center gap-6 text-xs"
       } font-mono uppercase tracking-wider text-slate-400 [&_li]:transition-colors [&_li]:duration-200`}>
-      {/* 🚀 Mobile-Only Navigation Link Target */}
       {isMobile && (
         <li className='hover:text-slate-200 border-b border-slate-900 pb-2'>
           <NavLinks label='System Docs' href='/docs' />
@@ -60,30 +59,54 @@ const NavBar = async () => {
   return (
     <header className='w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-900 sticky top-0 z-50 selection:bg-emerald-500/10 selection:text-emerald-400'>
       <nav className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative'>
-        {/* Left Side: VibeCred Branding Identity Layer & Desktop Docs Route */}
+        {/* Left Side: Branding & Home */}
         <div className='flex items-center gap-6'>
-          <div className='flex justify-center items-center gap-1.5 [&_a]:text-slate-100 [&_a]:hover:text-emerald-400 [&_a]:font-black tracking-tighter text-base font-sans transition-colors duration-200'>
+          {/* Logo Identity */}
+          <div className='flex items-center gap-1.5'>
             <img
               src='/vibe cred.png'
               alt='VibeCred Logo'
-              width='60'
-              className='object-contain shrink-0'
+              width='45'
+              className='object-contain'
             />
-            <NavLinks label='VibeCred' href='/' />
+            <span className='font-black text-slate-100 tracking-tighter text-base font-sans hidden sm:block'>
+              VibeCred
+            </span>
           </div>
 
-          {/* 🚀 Desktop-Only Navigation Link Target (Hides cleanly on small mobile viewports) */}
-          <ul className='hidden sm:flex items-center text-xs font-mono uppercase tracking-wider text-slate-500 hover:text-emerald-400 transition-colors duration-200'>
-            <li>
-              <NavLinks label='// Docs' href='/docs' />
-            </li>
-          </ul>
+          {/* Icon Nav */}
+          <div className='flex items-center gap-4 text-slate-500'>
+            <NavLinks
+              href='/'
+              label={
+                <div className='flex items-center gap-2 hover:text-emerald-400 transition-colors'>
+                  <Home size={18} />
+                  <span className='hidden sm:inline font-mono text-xs uppercase tracking-wider'>
+                    Home
+                  </span>
+                </div>
+              }
+            />
+            <ul className='hidden sm:flex items-center text-xs font-mono uppercase tracking-wider hover:text-emerald-400 transition-colors duration-200'>
+              <li>
+                <NavLinks
+                  label={
+                    <div className='flex items-center gap-2'>
+                      <FileText size={18} />
+                      <span>// Docs</span>
+                    </div>
+                  }
+                  href='/docs'
+                />
+              </li>
+            </ul>
+          </div>
         </div>
 
-        {/* Right Side: Desktop Menu Navigation Targets (Hidden on smaller viewports) */}
+        {/* Right Side: Navigation Targets */}
         <LinksMarkup isMobile={false} />
 
-        {/* Mobile Flyout Wrapper Context Slot (Hidden on desktop screens) */}
+        {/* Mobile Flyout */}
         <MobileMenu>
           <LinksMarkup isMobile={true} />
         </MobileMenu>
