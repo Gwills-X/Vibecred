@@ -115,3 +115,11 @@ export async function logout() {
   });
   redirect("/login");
 }
+
+export async function refreshSessionAction() {
+  // Logic to refresh - only call this from the Client-Side SessionRefresher
+  const user = await getAuthUser();
+  if (user) {
+    await createSession(user.userId);
+  }
+}
