@@ -3,7 +3,7 @@ import { socialEngine } from "@/services/socialEngine";
 import FollowButton from "@/components/FollowButton";
 import getAuthUser from "@/lib/getAuthUser"; // Assuming this is your auth helper
 import DashboardNav from "../DashboardNav";
-
+export const dynamic = "force-dynamic";
 export default async function NetworkPage() {
   const user = await getAuthUser();
   if (!user) return <div>Please log in.</div>;

@@ -4,6 +4,7 @@ import getAuthUser from "@/lib/getAuthUser";
 import { dataEngine } from "@/services/dataEngine";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
   const user = await getAuthUser();
