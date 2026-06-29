@@ -1,5 +1,8 @@
-import { createPosts } from "@/actions/posts"; // Kept mapped to your primary action path
+// src/app/posts/create/page.jsx
+import { createPosts } from "@/actions/posts";
 import BlogPostForm from "@/components/PostForm";
+
+export const dynamic = "force-dynamic"; // <--- THIS IS THE KEY
 
 export default async function CreatePage() {
   return (
