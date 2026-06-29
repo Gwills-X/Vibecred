@@ -1,41 +1,41 @@
-import "server-only";
+import "server-only"; // Enforce server-side execution isolation
 import { cookies } from "next/headers";
 import { decrypt } from "./session";
-import { query } from "./db";
+import { query } from "./db"; // 🚀 Import your query manager
 
-export async function getAuthUser() {
+export default async function getAuthUser() {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
 
-    if (!sessionCookie) return null;
+    if (!sessionCookie) {
+      return null; // Gracefully return null if no token exists
+    } // Attempt to decrypt and unpack the session payload
 
     const userPayload = await decrypt(sessionCookie);
 
-    // If decryption fails or payload is missing, return null
-    if (!userPayload?.userId) return null;
-
-    // Time Check
-    const now = Math.floor(Date.now() / 1000);
-    if (userPayload.exp && now > userPayload.exp) {
-      return null;
-    }
+    if (!userPayload || !userPayload.userId) {
+      return null; // Safety gate for expired or structurally invalid payloads
+    } // 🚀 Fetch full account metadata from your MySQL users table
 
     const dbUsers = await query(
       "SELECT id, name, email FROM users WHERE id = ?",
       [userPayload.userId],
     );
 
-    if (!dbUsers?.length) return null;
+    if (!dbUsers || dbUsers.length === 0) {
+      return null; // Handle case where cookie exists but user was purged from DB
+    } // Return the session tracking markers combined with real profile properties!
 
     return {
       userId: String(dbUsers[0].id),
       name: dbUsers[0].name,
       email: dbUsers[0].email,
+      iat: userPayload.iat,
       exp: userPayload.exp,
     };
   } catch (error) {
-    // Return null silently for structural errors to avoid crashing the UI
-    return null;
+    console.error("Session structural check error:", error.message);
+    return null; // Always fallback to a clean falsy state instead of crashing the route
   }
 }
