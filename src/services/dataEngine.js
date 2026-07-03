@@ -5,9 +5,12 @@ const DRIVER_TOKEN = process.env.DATABASE_PROVIDER || "MYSQL";
 
 export const dataEngine = {
   /**
-   * 📝 CREATE POST OR COMMENT
+   * 📝 CREATE POST OR COMMENT WITH OPTIONAL MEDIA
    */
-  createPost: async (payload) => {
+  createPost: async (
+    payload,
+    mediaData = { mediaUrl: null, fileType: "none", format: null },
+  ) => {
     // Generate a unified UUID for the node before executing the transaction
     const generatedPostId = crypto.randomUUID();
 
@@ -18,15 +21,45 @@ export const dataEngine = {
       authorName: payload.authorName || "Godswill Eguavoen",
     };
 
-    // If configured for Firebase fallback reads, intercept it, otherwise run standard MySQL
+    // If configured for Firebase, handle the post AND the media attachment
     if (DRIVER_TOKEN === "FIREBASE") {
-      const firebaseRepo = require("./firebase/postService");
-      return await firebaseRepo.insertFirebasePost(unifiedPayload);
+      const firebaseRepo = require("./firebase/socialMediaHandles");
+
+      // 1. Insert the post content
+      const result = await firebaseRepo.insertFirebasePost(unifiedPayload);
+
+      // 2. If a media URL was provided (from our instant upload), sync it to the Firebase posts collection
+      if (mediaData.mediaUrl) {
+        const { db } = require("@/lib/firebase");
+        const { doc, setDoc } = require("firebase/firestore");
+        await setDoc(
+          doc(db, "posts", generatedPostId),
+          {
+            mediaUrl: mediaData.mediaUrl,
+            updatedAt: new Date(),
+          },
+          { merge: true },
+        );
+      }
+
+      return result;
+    }
+    if (DRIVER_TOKEN !== "FIREBASE") {
+      // Explicitly add media_url to the payload so the repository can see it
+      const mysqlPayload = {
+        ...unifiedPayload,
+        media_url: mediaData.mediaUrl,
+        file_type: mediaData.fileType, // Send this to MySQL
+        format: mediaData.format, // Send this to MySQL
+      };
+
+      await mysqlRepo.insertMysqlPost(mysqlPayload);
+      return { success: true, insertId: generatedPostId };
     }
 
-    // Default to dynamic MySQL connection (Local or Aiven Cloud based on env)
-    await mysqlRepo.insertMysqlPost(unifiedPayload);
-    return { success: true, insertId: generatedPostId };
+    // // Default to dynamic MySQL connection
+    // await mysqlRepo.insertMysqlPost(unifiedPayload);
+    // return { success: true, insertId: generatedPostId };
   },
 
   /**
@@ -34,7 +67,7 @@ export const dataEngine = {
    */
   toggleLike: async (userId, postId) => {
     if (DRIVER_TOKEN === "FIREBASE") {
-      const firebaseRepo = require("./firebase/postService");
+      const firebaseRepo = require("./firebase/socialMediaHandles");
       return await firebaseRepo.toggleFirebaseLike(userId, postId);
     }
     return await mysqlRepo.toggleMysqlLike(userId, postId);
@@ -45,7 +78,7 @@ export const dataEngine = {
    */
   getTimeline: async (userId) => {
     if (DRIVER_TOKEN === "FIREBASE") {
-      const firebaseRepo = require("./firebase/postService");
+      const firebaseRepo = require("./firebase/socialMediaHandles");
       return await firebaseRepo.fetchFirebaseTimeline(userId);
     }
     return await mysqlRepo.fetchMysqlTimeline(userId);
@@ -78,7 +111,7 @@ export const dataEngine = {
    */
   getComments: async (parentId) => {
     if (DRIVER_TOKEN === "FIREBASE") {
-      const firebaseRepo = require("./firebase/postService");
+      const firebaseRepo = require("./firebase/socialMediaHandles");
       return await firebaseRepo.fetchFirebaseComments(parentId);
     }
     return await mysqlRepo.fetchMysqlComments(parentId);
@@ -112,9 +145,24 @@ export const dataEngine = {
    */
   getPostComments: async (postId) => {
     if (DRIVER_TOKEN === "FIREBASE") {
-      const firebaseRepo = require("./firebase/postService");
+      const firebaseRepo = require("./firebase/socialMediaHandles");
       return await firebaseRepo.fetchFirebaseComments(postId);
     }
     return await mysqlRepo.fetchCommentsByPostId(postId);
+  },
+
+  // Add this to your dataEngine
+  tagUserInPost: async (postId, mentionedUserId) => {
+    if (DRIVER_TOKEN === "FIREBASE") {
+      const { db } = require("@/lib/firebase");
+      const { doc, setDoc } = require("firebase/firestore");
+      // Create a mention document in Firebase
+      await setDoc(doc(db, "mentions", `${postId}_${mentionedUserId}`), {
+        postId,
+        mentionedUserId,
+        createdAt: new Date(),
+      });
+    }
+    // MySQL logic can be skipped for mentions if you prefer speed
   },
 };

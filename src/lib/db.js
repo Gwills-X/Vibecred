@@ -15,7 +15,9 @@ async function connectToDatabase() {
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
-        connectTimeout: 15000,
+        connectTimeout: 60000,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 10000,
         // Enforces SSL verification for external cloud architecture traffic
         ssl: {
           rejectUnauthorized: false,

@@ -11,27 +11,79 @@ export default function PostCard({ post, currentUserId }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  console.log(
+    "PostCard Rendered with post:",
+    post,
+    "and currentUserId:",
+    currentUserId,
+  );
 
   const [optimisticLikeState, setOptimisticLikeState] = useOptimistic(
     { liked: post.hasLiked || false, count: post.likesCount || 0 },
-    (state, nextLikedState) => {
-      return {
-        liked: nextLikedState,
-        count: nextLikedState ? state.count + 1 : Math.max(0, state.count - 1),
-      };
-    },
+    (state, nextLikedState) => ({
+      liked: nextLikedState,
+      count: nextLikedState ? state.count + 1 : Math.max(0, state.count - 1),
+    }),
   );
+
+  // --- MEDIA RENDERING LOGIC ---
+  const renderMedia = (post) => {
+    if (post.fileType === "none" || !post.mediaUrl) return null;
+
+    // Video Thumbnail (in your PostCard.jsx)
+    if (post.fileType === "video") {
+      return (
+        <div
+          onClick={() => setIsFullScreen(true)}
+          className='relative w-full max-w-[240px] aspect-video cursor-pointer group rounded-xl overflow-hidden border border-slate-700 bg-black shadow-lg hover:ring-2 hover:ring-emerald-500/50 transition-all'>
+          {/* Video preview with muted/no-controls for the thumbnail */}
+          <video src={post.mediaUrl} className='w-full h-full object-cover' />
+
+          {/* Cinematic Play Overlay */}
+          <div className='absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-all'>
+            <div className='w-12 h-12 flex items-center justify-center rounded-full bg-emerald-500/90 backdrop-blur-sm shadow-xl'>
+              <svg
+                className='w-6 h-6 text-slate-950 fill-current ml-1'
+                viewBox='0 0 24 24'>
+                <path d='M8 5v14l11-7z' />
+              </svg>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Document/Raw Download
+    if (post.fileType === "raw") {
+      return (
+        <a
+          href={post.mediaUrl}
+          target='_blank'
+          download
+          className='flex items-center gap-2 p-2 w-fit bg-slate-800 border border-slate-700 text-emerald-400 rounded hover:bg-slate-700 transition-all text-xs font-mono uppercase'>
+          📄 Download {post.format?.toUpperCase() || "File"}
+        </a>
+      );
+    }
+
+    // Image Thumbnail
+    return (
+      <div
+        // onClick={() => setIsFullScreen(true)}
+        className='w-30 h-auto overflow-hidden rounded-lg border border-slate-700 cursor-pointer hover:opacity-80 transition-opacity'>
+        <img src={post.mediaUrl} alt='Thumbnail' className='w-full h-full ' />
+      </div>
+    );
+  };
 
   useEffect(() => {
     setMounted(true);
-
     if (post.createdAt) {
       const createdDate = new Date(post.createdAt);
-      const currentDate = new Date();
       const thirtyMinutesInMs = 30 * 60 * 1000;
-      const timeDifference = currentDate.getTime() - createdDate.getTime();
-
+      const timeDifference = new Date().getTime() - createdDate.getTime();
       setIsEditable(timeDifference >= 0 && timeDifference < thirtyMinutesInMs);
     }
   }, [post.createdAt]);
@@ -45,63 +97,46 @@ export default function PostCard({ post, currentUserId }) {
     : "";
 
   const handleLikeClick = async () => {
-    // 🛡️ Block anonymous interaction
-    if (!currentUserId) {
+    if (!currentUserId)
       return alert(
         "Authorize your identity matrix to react to pulses. Please log in.",
       );
-    }
-
     const targetLikedState = !optimisticLikeState.liked;
-
     startTransition(async () => {
       setOptimisticLikeState(targetLikedState);
       const res = await handleToggleLike(post.id);
-      if (!res?.success) {
-        alert("Transaction failed to sync. Reverting matrix state.");
-      }
+      if (!res?.success) alert("Transaction failed to sync.");
     });
   };
 
   return (
     <article className='flex flex-col justify-between rounded-2xl bg-slate-900/40 backdrop-blur-md border-2 border-slate-900 p-4 shadow-xl hover:border-slate-800/80 transition-all group selection:bg-emerald-500/10 selection:text-emerald-400'>
       <div className='space-y-3'>
-        {/* Author Header Row */}
         <div className='flex items-center justify-between text-xs text-slate-500 font-medium font-mono'>
-          <span className='hover:text-emerald-400 transition-colors cursor-pointer'>
-            By @{post.authorName || "anonymous"}
-          </span>
+          <span>By @{post.authorName || "anonymous"}</span>
           {cardDate && <span>{cardDate}</span>}
         </div>
 
-        {/* Post Title */}
         <h3 className='text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors line-clamp-2 tracking-tight'>
           {post.title}
         </h3>
 
-        {/* Core Content Body Text */}
+        {/* Media Thumbnail Section */}
+        {renderMedia(post)}
+
         <p className='text-sm text-slate-400 line-clamp-4 leading-relaxed'>
           {post.content}
         </p>
       </div>
 
-      {/* REACTION & CONTROL ROW CONTAINER */}
+      {/* --- FOOTER CONTROLS --- */}
       <div className='pt-4 mt-5 border-t border-slate-900/60 flex flex-col justify-between gap-4'>
         <div className='flex items-center justify-between gap-4 text-xs font-mono font-bold select-none'>
-          {/* LIKE BUTTON ACCENT */}
           <button
             onClick={handleLikeClick}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
-              optimisticLikeState.liked
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                : "bg-slate-950/40 border-slate-900/60 text-slate-500 hover:text-slate-300 hover:border-slate-800"
-            }`}>
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${optimisticLikeState.liked ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-slate-950/40 border-slate-900/60 text-slate-500 hover:text-slate-300"}`}>
             <svg
-              className={`w-4 h-4 transition-transform active:scale-125 ${
-                optimisticLikeState.liked
-                  ? "fill-emerald-400 stroke-none"
-                  : "fill-none stroke-current"
-              }`}
+              className={`w-4 h-4 ${optimisticLikeState.liked ? "fill-emerald-400 stroke-none" : "fill-none stroke-current"}`}
               viewBox='0 0 24 24'
               strokeWidth='2'>
               <path
@@ -112,11 +147,9 @@ export default function PostCard({ post, currentUserId }) {
             </svg>
             <span>{optimisticLikeState.count}</span>
           </button>
-
-          {/* COMMENT CONTAINER FOOTPRINT (Updated Destination Path) */}
           <Link
             href={`/posts/show/${post.id}`}
-            className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950/40 border border-slate-900/60 text-slate-500 hover:text-slate-300 hover:border-slate-800 transition-all'>
+            className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950/40 border border-slate-900/60 text-slate-500 hover:text-slate-300 transition-all'>
             <svg
               className='w-4 h-4'
               fill='none'
@@ -133,14 +166,12 @@ export default function PostCard({ post, currentUserId }) {
           </Link>
         </div>
 
-        {/* NAVIGATION & ACTION PANEL SWITCHES */}
         <div className='flex items-center gap-4 justify-between shrink-0'>
           <Link
             href={`/posts/show/${post.id}`}
             className='text-xs font-extrabold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors'>
             Read Pulse &rarr;
           </Link>
-
           {path === "/dashboard" && mounted && (
             <div className='inline-flex items-center pl-4 border-l border-slate-800/80'>
               {isEditable ? (
@@ -154,26 +185,48 @@ export default function PostCard({ post, currentUserId }) {
                   Locked
                 </span>
               )}
-
               <button
-                onClick={() => {
-                  if (!currentUserId)
-                    return alert("Log in to remove content records.");
-                  setShowDeleteModal(true);
-                }}
+                onClick={() => setShowDeleteModal(true)}
                 className='text-xs font-mono font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors ml-4 cursor-pointer'>
                 Delete
               </button>
             </div>
           )}
         </div>
-
-        <DeleteModal
-          postId={post.id}
-          show={showDeleteModal}
-          setShow={setShowDeleteModal}
-        />
       </div>
+
+      {isFullScreen && (
+        <div
+          className='fixed inset-0 z-[100] flex items-center justify-center bg-black/98 backdrop-blur-xl p-0'
+          onClick={() => setIsFullScreen(false)}>
+          {/* Close button - Top Right */}
+          <button
+            onClick={() => setIsFullScreen(false)}
+            className='absolute top-6 right-6 z-[101] text-white/70 hover:text-white p-2 bg-white/10 rounded-full'>
+            ✕
+          </button>
+
+          {/* Video Container: Fits screen perfectly */}
+          <div
+            className='relative w-full h-full flex items-center justify-center'
+            onClick={(e) => e.stopPropagation()}>
+            <video
+              src={post.mediaUrl}
+              controls
+              autoPlay
+              playsInline // CRITICAL for iOS/Android to play without forcing full screen
+              className='max-h-full w-full object-contain'
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
+
+      <DeleteModal
+        postId={post.id}
+        show={showDeleteModal}
+        setShow={setShowDeleteModal}
+      />
     </article>
   );
 }

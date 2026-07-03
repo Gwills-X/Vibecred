@@ -1,7 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { getAnalytics, isSupported } from "firebase/analytics"; // 🚀 Added analytics handlers
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,9 +16,3 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-
-// Initialize analytics conditionally so server-side rendering doesn't crash
-export const analytics =
-  typeof window !== "undefined"
-    ? isSupported().then((yes) => (yes ? getAnalytics(app) : null))
-    : null;

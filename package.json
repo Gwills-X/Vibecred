@@ -9,11 +9,13 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.10.0",
     "firebase": "^12.15.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.22.0",
     "mysql2": "^3.22.4",
     "next": "16.2.6",
+    "next-cloudinary": "^6.17.5",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.4.3"

@@ -77,7 +77,6 @@ export async function login(state, formData) {
   const { email, password } = validatedFields.data;
 
   try {
-    // Check user account records via authEngine
     const user = await authEngine.getUserForLogin(email);
 
     if (!user) {
@@ -96,6 +95,21 @@ export async function login(state, formData) {
       };
     }
   } catch (error) {
+    // 🚀 NEW: Cold Start / Database Timeout Handling
+    if (
+      error.code === "ETIMEDOUT" ||
+      error.message === "DATABASE_UNAVAILABLE"
+    ) {
+      return {
+        success: false,
+        errors: {
+          server: [
+            "The system is waking up from sleep mode. Please wait 10 seconds and try logging in again.",
+          ],
+        },
+      };
+    }
+
     console.error("Login Action Exception Error:", error);
     return {
       success: false,

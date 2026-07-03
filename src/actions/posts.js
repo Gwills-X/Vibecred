@@ -13,44 +13,31 @@ export async function createPosts(prevState, formData) {
   const user = await getAuthUser();
   if (!user) return redirect("/login");
 
-  // 1. Secure context extraction supporting both raw standard objects & FormData wrappers
-  const parentId =
-    formData && typeof formData.get === "function"
-      ? formData.get("parent_id") || null
-      : null;
-  const content =
-    formData && typeof formData.get === "function"
-      ? formData.get("content")
-      : null;
-  const title = parentId
-    ? null
-    : formData && typeof formData.get === "function"
-      ? formData.get("title") || null
-      : null;
+  // Extract fields
+  const parentId = formData.get("parent_id") || null;
+  const content = formData.get("content");
+  const title = parentId ? null : formData.get("title") || null;
+  const mediaUrl = formData.get("mediaUrl") || null;
+  const fileType = formData.get("fileType") || "none"; // Get from form
+  const format = formData.get("format") || null; // Get from form
 
   // 2. Conditional Schema Validation Rules
   if (!parentId) {
-    // Standard validation route for standalone timeline posts
     const validatedFields = BlogPostFormScheme.safeParse({ title, content });
     if (!validatedFields.success) {
       return {
         success: false,
         errors: validatedFields.error.flatten().fieldErrors,
-        title: title || "", // 🌟 Fallback to empty string instead of null
-        content: content || "", // 🌟 Fallback to empty string instead of null
+        title: title || "",
+        content: content || "",
       };
     }
-  } else {
-    // Dynamic text constraint matching for comments
-    if (!content || content.trim() === "") {
-      return {
-        success: false,
-        errors: {
-          content: ["Reply matrix arrays cannot be transmitted empty."],
-        },
-        content,
-      };
-    }
+  } else if (!content || content.trim() === "") {
+    return {
+      success: false,
+      errors: { content: ["Reply matrix arrays cannot be transmitted empty."] },
+      content,
+    };
   }
 
   try {
@@ -58,13 +45,17 @@ export async function createPosts(prevState, formData) {
       user.name || user.username || "Anonymous Creator";
 
     // 3. Persist record across active driver channels
-    await dataEngine.createPost({
-      authorId: String(user.userId || user.id),
-      authorName: fallbackAuthorName,
-      title: title, // Saves as NULL cleanly inside altered schema fields
-      content: content,
-      parentId: parentId, // Correctly pins child arrays to parent post UUIDs
-    });
+    // Pass the mediaUrl as the second argument
+    await dataEngine.createPost(
+      {
+        authorId: String(user.userId || user.id),
+        authorName: fallbackAuthorName,
+        title: title,
+        content: content,
+        parentId: parentId,
+      },
+      { mediaUrl, fileType, format },
+    );
   } catch (error) {
     console.error("Database Processing Error:", error);
     return {
@@ -75,13 +66,12 @@ export async function createPosts(prevState, formData) {
     };
   }
 
-  // 4. Targeted Caching Operations & Routing Swaps
   revalidatePath("/");
   revalidatePath("/dashboard");
 
   if (parentId) {
     revalidatePath(`/posts/show/${parentId}`);
-    return { success: true }; // Anchors caller cleanly inside the current thread view state
+    return { success: true };
   } else {
     redirect("/dashboard");
   }
@@ -96,6 +86,7 @@ export async function updatePostAction(postId, formData) {
 
   const title = formData.get("title");
   const content = formData.get("content");
+  const mediaUrl = formData.get("mediaUrl"); // Capture new mediaUrl if updated
 
   const validatedFields = BlogPostFormScheme.safeParse({ title, content });
   if (!validatedFields.success) {
@@ -114,26 +105,26 @@ export async function updatePostAction(postId, formData) {
       };
     }
 
-    // 30-Minute Grace Period Shield Logic
+    // Ownership & Time Shield Logic
     const createdAtTime = new Date(post.createdAt || post.created_at).getTime();
     const currentTime = new Date().getTime();
-    const thirtyMinutesInMs = 30 * 60 * 1000;
-
-    if (currentTime - createdAtTime > thirtyMinutesInMs) {
+    if (currentTime - createdAtTime > 30 * 60 * 1000) {
       return {
         success: false,
         errors: { server: ["The 30-minute edit window has expired."] },
       };
     }
-
     if (String(post.authorId) !== String(user.userId || user.id)) {
-      return {
-        success: false,
-        errors: { server: ["Access denied. Ownership validation failed."] },
-      };
+      return { success: false, errors: { server: ["Access denied."] } };
     }
 
+    // Update text content
     await dataEngine.updatePost(postId, { title, content });
+
+    // Update media content if a new file was attached
+    if (mediaUrl) {
+      await dataEngine.updatePostMedia(postId, mediaUrl);
+    }
   } catch (error) {
     console.error("Database Modification Error:", error);
     return {
@@ -143,7 +134,6 @@ export async function updatePostAction(postId, formData) {
   }
 
   revalidatePath("/");
-  revalidatePath("/dashboard");
   revalidatePath(`/posts/show/${postId}`);
   redirect(`/posts/show/${postId}`);
 }
@@ -171,7 +161,7 @@ export async function deletePostAction(postId) {
       };
     }
 
-    await dataEngine.deletePost(postId);
+    await dataEngine.deletePostOrComment(postId);
   } catch (error) {
     console.error("Database Deletion Error:", error);
     return {

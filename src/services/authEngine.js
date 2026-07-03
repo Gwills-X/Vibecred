@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import * as mysqlUserRepo from "./mysql/userService";
-import * as firebaseUserRepo from "./firebase/userService";
+// import * as firebaseUserRepo from "./firebase/storageService";
 
 const DRIVER_TOKEN = process.env.DATABASE_PROVIDER || "MYSQL";
 

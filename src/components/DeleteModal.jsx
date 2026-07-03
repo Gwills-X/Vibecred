@@ -7,8 +7,6 @@ export default function DeleteModal({ postId, show, setShow }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [serverError, setServerError] = useState(null);
 
-  console.log(`DeleteModal Active State for Target Instance ID: ${postId}`);
-
   const handleDelete = async () => {
     setIsDeleting(true);
     setServerError(null);
