@@ -18,3 +18,49 @@ export async function insertMysqlUser({ id, name, email, hashedPassword }) {
   await query(sql, [id, name, email, hashedPassword]);
   return id;
 }
+
+/**
+ * Updates user profile information in MySQL
+ */
+export async function updateMysqlUser(userId, data) {
+  const sql = `UPDATE users SET name = ?, bio = ?, github_handle = ?, website_url = ?, location = ?, profile_pic_url = ? WHERE id = ?`;
+
+  // 🔍 DEBUG: Inspect the parameters being passed to the SQL query
+  console.log("Service: Executing SQL with params:", [
+    data.name,
+    data.bio,
+    data.github_handle,
+    data.website_url,
+    data.location,
+    data.profile_pic_url,
+    userId,
+  ]);
+
+  try {
+    const result = await query(sql, [
+      data.name,
+      data.bio,
+      data.github_handle,
+      data.website_url,
+      data.location,
+      data.profile_pic_url,
+      userId,
+    ]);
+    return result;
+  } catch (error) {
+    // 🔍 DEBUG: If the database fails, you MUST see the error here
+    console.error("Service: Database Update Failed:", error);
+    throw error;
+  }
+}
+
+export async function getUserPassword(userId) {
+  const rows = await query("SELECT password FROM users WHERE id = ?", [userId]);
+  return rows[0];
+}
+export async function updatePassword(userId, hashedPassword) {
+  await query("UPDATE users SET password = ? WHERE id = ?", [
+    hashedPassword,
+    userId,
+  ]);
+}

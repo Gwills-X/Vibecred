@@ -1,33 +1,15 @@
-export default function EditProfilePage() {
+import getAuthUser from "@/lib/getAuthUser";
+import EditProfileForm from "./components/EditProfileForm";
+
+export default async function EditProfilePage() {
+  const user = await getAuthUser();
+  if (!user) return <p>Unauthorized</p>;
+
   return (
-    <div className='space-y-6'>
-      <h2 className='text-lg font-bold text-white'>Edit Profile</h2>
-      <div className='flex items-center gap-6'>
-        <div className='w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-emerald-400 font-bold'>
-          GW
-        </div>
-        <button className='text-xs text-emerald-400 font-bold hover:underline'>
-          Change Picture
-        </button>
-      </div>
-      <div className='grid md:grid-cols-2 gap-4'>
-        <input
-          className='w-full bg-slate-950/50 border border-white/5 p-3 rounded-lg text-sm'
-          placeholder='Display Name'
-        />
-        <input
-          className='w-full bg-slate-950/50 border border-white/5 p-3 rounded-lg text-sm'
-          placeholder='Email'
-        />
-      </div>
-      <textarea
-        className='w-full bg-slate-950/50 border border-white/5 p-4 rounded-lg text-sm'
-        rows={3}
-        placeholder='About me...'
-      />
-      <button className='bg-emerald-500 text-slate-950 px-6 py-2 rounded-lg text-sm font-bold'>
-        Save Profile
-      </button>
+    <div className='max-w-5xl mx-auto py-10 '>
+      <h1 className='text-3xl font-black text-white mb-8'>Account Settings</h1>
+      {/* Pass user data as props to the Client Component */}
+      <EditProfileForm initialUser={user} />
     </div>
   );
 }

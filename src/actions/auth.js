@@ -137,3 +137,21 @@ export async function refreshSessionAction() {
     await createSession(user.userId);
   }
 }
+
+export async function updatePasswordAction(
+  userId,
+  currentPassword,
+  newPassword,
+) {
+  try {
+    const userPassword = await authEngine.getUserPassword(userId); // Ensure user exists
+    // 2. Validate current password
+    const isMatch = await bcrypt.compare(currentPassword, userPassword);
+    if (!isMatch) throw new Error("Current password does not match.");
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await authEngine.updatePassword(userId, hashedPassword);
+    return { success: "Password updated successfully!" };
+  } catch (error) {
+    return { error: error.message };
+  }
+}

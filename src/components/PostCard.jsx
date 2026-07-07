@@ -13,12 +13,6 @@ export default function PostCard({ post, currentUserId }) {
   const [mounted, setMounted] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  console.log(
-    "PostCard Rendered with post:",
-    post,
-    "and currentUserId:",
-    currentUserId,
-  );
 
   const [optimisticLikeState, setOptimisticLikeState] = useOptimistic(
     { liked: post.hasLiked || false, count: post.likesCount || 0 },
@@ -110,7 +104,7 @@ export default function PostCard({ post, currentUserId }) {
   };
 
   return (
-    <article className='flex flex-col justify-between rounded-2xl bg-slate-900/40 backdrop-blur-md border-2 border-slate-900 p-4 shadow-xl hover:border-slate-800/80 transition-all group selection:bg-emerald-500/10 selection:text-emerald-400'>
+    <article className=' flex flex-col justify-between rounded-2xl bg-slate-900/40 backdrop-blur-md border-2 border-slate-900 p-4 shadow-xl hover:border-slate-800/80 transition-all group selection:bg-emerald-500/10 selection:text-emerald-400'>
       <div className='space-y-3'>
         <div className='flex items-center justify-between text-xs text-slate-500 font-medium font-mono'>
           <span>By @{post.authorName || "anonymous"}</span>
@@ -186,7 +180,10 @@ export default function PostCard({ post, currentUserId }) {
                 </span>
               )}
               <button
-                onClick={() => setShowDeleteModal(true)}
+                onClick={() => {
+                  setShowDeleteModal(true);
+                  console.log(post);
+                }}
                 className='text-xs font-mono font-bold uppercase tracking-wider text-red-500 hover:text-red-400 transition-colors ml-4 cursor-pointer'>
                 Delete
               </button>
@@ -226,6 +223,8 @@ export default function PostCard({ post, currentUserId }) {
         postId={post.id}
         show={showDeleteModal}
         setShow={setShowDeleteModal}
+        publicId={post.publicId} // Pass this from the database record
+        fileType={post.fileType} // Pass this from the database record
       />
     </article>
   );

@@ -6,7 +6,7 @@ export default function DashboardNav() {
   const pathname = usePathname();
   const tabs = [
     { name: "My Posts", href: "/dashboard" },
-    { name: "Drafts", href: "/dashboard/drafts" },
+    { name: "Chats", href: "/dashboard/chats" },
     { name: "Analytics", href: "/dashboard/analytics" },
     { name: "Media Vault", href: "/dashboard/media" },
     { name: "Network", href: "/dashboard/network" },

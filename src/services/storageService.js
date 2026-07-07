@@ -1,3 +1,7 @@
+/**
+ * Uploads media to Cloudinary, forcing 'raw' resource type for all documents
+ * to ensure they are downloadable as-is.
+ */
 export async function uploadMedia(file) {
   if (!file) return null;
 
@@ -5,15 +9,18 @@ export async function uploadMedia(file) {
   formData.append("file", file);
   formData.append(
     "upload_preset",
-    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET, // Ensure this points to your preset
   );
 
-  // 1. Determine the correct endpoint based on the file type
-  // PDFs and docs must use 'raw', images use 'image'
+  // 1. Expand document detection to catch PDFs, Word, Excel, and Text files
   const isDocument =
     file.type === "application/pdf" ||
-    file.type.includes("wordprocessingml") ||
-    file.type.includes("msword");
+    file.type.includes("wordprocessingml") || // .docx
+    file.type.includes("msword") || // .doc
+    file.type.includes("spreadsheetml") || // .xlsx
+    file.type.includes("ms-excel") || // .xls
+    file.type.includes("text/") || // .txt, .csv, etc.
+    file.type.includes("application/zip"); // .zip archives
 
   const resourceType = isDocument ? "raw" : "image";
 
@@ -30,13 +37,15 @@ export async function uploadMedia(file) {
     const data = await response.json();
 
     if (!data.secure_url) {
-      throw new Error("Upload failed");
+      throw new Error("Upload failed: No secure_url returned");
     }
+
+    console.log(`File uploaded as ${resourceType}:`, data.secure_url);
 
     return {
       url: data.secure_url,
       publicId: data.public_id,
-      fileType: resourceType, // This will now correctly be 'raw' or 'image'
+      fileType: resourceType, // Always 'raw' for docs, 'image' for images
       format: data.format,
     };
   } catch (error) {

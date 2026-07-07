@@ -18,10 +18,9 @@ export default async function getAuthUser() {
       return null; // Safety gate for expired or structurally invalid payloads
     } // 🚀 Fetch full account metadata from your MySQL users table
 
-    const dbUsers = await query(
-      "SELECT id, name, email FROM users WHERE id = ?",
-      [userPayload.userId],
-    );
+    const dbUsers = await query("SELECT * FROM users WHERE id = ?", [
+      userPayload.userId,
+    ]);
 
     if (!dbUsers || dbUsers.length === 0) {
       return null; // Handle case where cookie exists but user was purged from DB
@@ -31,6 +30,12 @@ export default async function getAuthUser() {
       userId: String(dbUsers[0].id),
       name: dbUsers[0].name,
       email: dbUsers[0].email,
+      location: dbUsers[0].location,
+      github_handle: dbUsers[0].github_handle,
+      website_url: dbUsers[0].website_url,
+      profile_pic_url: dbUsers[0].profile_pic_url,
+      bio: dbUsers[0].bio,
+      password: dbUsers[0].password, // Include hashed password for server-side validation
       iat: userPayload.iat,
       exp: userPayload.exp,
     };

@@ -3,7 +3,9 @@ export default function AnalyticsPage() {
     <div className='max-w-7xl mx-auto space-y-8 py-8 px-4'>
       <div className='flex flex-col gap-6'>
         <div>
-          <h1 className='text-3xl font-black text-white'>Growth Insights</h1>
+          <h1 className='text-3xl font-black text-white'>
+            Growth Insights (coming soon... Update on its way!)
+          </h1>
           <p className='text-emerald-500 font-mono text-sm mt-1'>
             Understand what resonates with your audience
           </p>

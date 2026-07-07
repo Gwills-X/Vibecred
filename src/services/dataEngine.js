@@ -9,7 +9,12 @@ export const dataEngine = {
    */
   createPost: async (
     payload,
-    mediaData = { mediaUrl: null, fileType: "none", format: null },
+    mediaData = {
+      mediaUrl: null,
+      fileType: "none",
+      format: null,
+      publicId: null,
+    },
   ) => {
     // Generate a unified UUID for the node before executing the transaction
     const generatedPostId = crypto.randomUUID();
@@ -49,6 +54,7 @@ export const dataEngine = {
       const mysqlPayload = {
         ...unifiedPayload,
         media_url: mediaData.mediaUrl,
+        public_id: mediaData.publicId,
         file_type: mediaData.fileType, // Send this to MySQL
         format: mediaData.format, // Send this to MySQL
       };

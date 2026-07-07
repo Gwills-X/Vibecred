@@ -1,63 +1,84 @@
-// app/dashboard/network/page.jsx
 import { socialEngine } from "@/services/socialEngine";
 import FollowButton from "@/components/FollowButton";
-import getAuthUser from "@/lib/getAuthUser"; // Assuming this is your auth helper
-import DashboardNav from "../DashboardNav";
+import getAuthUser from "@/lib/getAuthUser";
+import Link from "next/link";
 export const dynamic = "force-dynamic";
+
 export default async function NetworkPage() {
   const user = await getAuthUser();
   if (!user) return <div>Please log in.</div>;
 
   const suggestions = await socialEngine.getSuggestedUsers(user.userId);
-  // Add a helper to get your OWN stats
   const myStats = await socialEngine.getFollowStats(user.userId);
 
   return (
-    <div className='max-w-5xl mx-auto py-8 px-4 grid grid-cols-1 lg:grid-cols-3 gap-8'>
-      {/* LEFT COLUMN: Stats & Profile */}
-      <div className='lg:col-span-1 space-y-6'>
-        <div className='glass-card p-6 bg-slate-900/50 rounded-2xl border border-slate-800'>
-          <h2 className='text-lg font-bold text-white'>My Network</h2>
-          <div className='flex gap-4 mt-4'>
-            <div className='text-center'>
-              <div className='text-xl font-black text-emerald-400'>
+    <div className='max-w-6xl mx-auto py-8 px-4 grid grid-cols-1 lg:grid-cols-4 gap-8'>
+      {/* LEFT: Stats */}
+      <div className='lg:col-span-1'>
+        <div className='bg-slate-900/50 p-6 rounded-2xl border border-slate-800 sticky top-12'>
+          <h2 className='text-sm font-bold text-slate-400 uppercase tracking-widest'>
+            Your Network
+          </h2>
+          <div className='grid grid-cols-2 gap-4 mt-6'>
+            <div className='bg-slate-950 p-3 rounded-lg border border-slate-800 text-center'>
+              <div className='text-2xl font-black text-emerald-400'>
                 {myStats.following}
               </div>
-              <div className='text-xs text-slate-400 uppercase'>Following</div>
+              <div className='text-[10px] text-slate-500 uppercase'>
+                Following
+              </div>
             </div>
-            <div className='text-center'>
-              <div className='text-xl font-black text-emerald-400'>
+            <div className='bg-slate-950 p-3 rounded-lg border border-slate-800 text-center'>
+              <div className='text-2xl font-black text-emerald-400'>
                 {myStats.followers}
               </div>
-              <div className='text-xs text-slate-400 uppercase'>Followers</div>
+              <div className='text-[10px] text-slate-500 uppercase'>
+                Followers
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Suggestions */}
-      <div className='lg:col-span-2'>
-        <h1 className='text-2xl font-black text-white mb-6'>Discover People</h1>
-        <div className='space-y-4'>
+      {/* RIGHT: User Directory */}
+      <div className='lg:col-span-3'>
+        <h1 className='text-xl font-black text-white mb-6'>
+          Explore Developers
+        </h1>
+        <div className='grid gap-4'>
           {suggestions.map((person) => (
             <div
               key={person.id}
-              className='flex items-center justify-between p-5 bg-slate-900/40 border border-slate-800 hover:border-emerald-500/30 transition-all rounded-xl'>
-              <div className='flex items-center gap-4'>
-                <div className='w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center font-bold text-white'>
-                  {person.name[0]}
+              className='flex items-center justify-between p-5 bg-slate-900/40 border border-slate-800 rounded-xl hover:border-emerald-500/30 transition-all'>
+              <Link
+                href={`/dashboard/network/${person.id}`}
+                className='flex items-center gap-4 flex-1'>
+                <div className='w-12 h-12 rounded-full overflow-hidden bg-slate-800'>
+                  {person.profile_pic_url ? (
+                    <img
+                      src={person.profile_pic_url}
+                      className='w-full h-full object-cover'
+                    />
+                  ) : (
+                    <div className='w-full h-full flex items-center justify-center font-bold text-emerald-400'>
+                      {person.name[0]}
+                    </div>
+                  )}
                 </div>
                 <div>
-                  <h3 className='font-bold text-white'>{person.name}</h3>
-                  <p className='text-xs text-slate-400'>
-                    Shared 3 posts recently
+                  <h3 className='font-bold text-white hover:text-emerald-400'>
+                    {person.name}
+                  </h3>
+                  <p className='text-xs text-slate-500 truncate max-w-[200px]'>
+                    {person.bio || "No bio set."}
                   </p>
                 </div>
-              </div>
+              </Link>
+
               <FollowButton
                 currentUserId={user.userId}
                 targetId={person.id}
-                isInitiallyFollowing={false}
+                isInitiallyFollowing={person.isFollowing}
               />
             </div>
           ))}

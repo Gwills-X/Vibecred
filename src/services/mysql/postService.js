@@ -11,13 +11,14 @@ export async function insertMysqlPost({
   title,
   content,
   parentId,
+  public_id = null, // 🌟 Added public_id support
   media_url = null, // 🌟 Added media_url support
   file_type = "none", // Add this
   format = null, // Add this
 }) {
   const sql = `
-    INSERT INTO posts (id, authorId, author, title, content, parent_id, media_url, file_type, format) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO posts (id, authorId, author, title, content, parent_id, media_url, file_type, format, public_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   await query(sql, [
     id,
@@ -29,6 +30,7 @@ export async function insertMysqlPost({
     media_url,
     file_type,
     format,
+    public_id,
   ]);
   return { success: true, insertId: id };
 }
@@ -71,7 +73,7 @@ export async function fetchMysqlTimeline(currentUserId) {
     const sql = `
       SELECT 
         p.id, p.title, p.content, p.authorId, p.author AS authorName, 
-        p.created_at AS createdAt, p.media_url AS mediaUrl, 
+        p.created_at AS createdAt, p.media_url AS mediaUrl, p.public_id AS publicId,
         p.file_type AS fileType, p.format AS format,
         COUNT(DISTINCT l.user_id, l.post_id) AS likesCount,
         SUM(CASE WHEN l.user_id = ? THEN 1 ELSE 0 END) AS hasLiked,
@@ -79,7 +81,7 @@ export async function fetchMysqlTimeline(currentUserId) {
       FROM posts p
       LEFT JOIN likes l ON p.id = l.post_id
       WHERE p.parent_id IS NULL
-      GROUP BY p.id, p.title, p.content, p.authorId, p.author, p.created_at, p.media_url, p.file_type, p.format
+      GROUP BY p.id, p.title, p.content, p.authorId, p.author, p.created_at, p.media_url, p.file_type, p.format, p.public_id
       ORDER BY p.created_at DESC
     `;
     const rows = await query(sql, [currentUserId]);
@@ -90,6 +92,7 @@ export async function fetchMysqlTimeline(currentUserId) {
       // --- MAP THE NEW FIELDS ---
       fileType: row.fileType || "none",
       format: row.format,
+      publicId: row.publicId,
       // --------------------------
       authorName: row.authorName || "VibeCred Professional",
       createdAt: row.createdAt
@@ -131,6 +134,7 @@ export async function fetchMysqlPostById(postId, currentUserId = null) {
       mediaUrl: targetPost.media_url, // 🌟 Map to clean object property
       fileType: targetPost.file_type, // 🌟 Map to clean object property
       format: targetPost.format, // 🌟 Map to clean object property
+      publicId: targetPost.publicId, // 🌟 Map to clean object property
       createdAt: targetPost.created_at
         ? new Date(targetPost.created_at).toISOString()
         : new Date().toISOString(),
@@ -149,17 +153,25 @@ export async function fetchMysqlPostById(postId, currentUserId = null) {
  */
 export async function modifyMysqlPost(
   postId,
-  { title, content, media_url = null, file_type = "none", format = null },
+  {
+    title,
+    content,
+    media_url = null,
+    file_type = "none",
+    format = null,
+    public_id = null,
+  },
 ) {
   try {
     const sql =
-      "UPDATE posts SET title = ?, content = ?, media_url = ?, file_type = ?, format = ? WHERE id = ?";
+      "UPDATE posts SET title = ?, content = ?, media_url = ?, file_type = ?, format = ?, public_id = ? WHERE id = ?";
     return await query(sql, [
       title,
       content,
       media_url,
       file_type,
       format,
+      public_id,
       postId,
     ]);
   } catch (error) {

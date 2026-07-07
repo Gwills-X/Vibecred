@@ -33,7 +33,7 @@ export default function SettingsLayout({ children }) {
       </div>
 
       {/* This renders the page.jsx of the specific sub-folder */}
-      <div className='glass-card p-8 border-emerald-500/10'>{children}</div>
+      <div className='glass-card p-3 border-emerald-500/10'>{children}</div>
     </div>
   );
 }

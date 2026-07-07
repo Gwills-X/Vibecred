@@ -17,7 +17,7 @@ export default async function Dashboard() {
   const hasPosts = filteredPosts.length > 0;
 
   return (
-    <div className='max-w-7xl w-full mx-auto space-y-8 py-8 px-4'>
+    <div className='max-w-7xl w-full mx-auto space-y-8 py-8 px-4 '>
       {/* HEADER SECTION */}
       <div className='flex flex-col gap-6'>
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
@@ -48,7 +48,7 @@ export default async function Dashboard() {
               </h2>
             </div>
 
-            <div className='grid gap-3 md:grid-cols-2 lg:grid-cols-3'>
+            <div className='grid gap-3 gap-y-10 md:grid-cols-2 lg:grid-cols-3'>
               {filteredPosts.map((post) => (
                 <div
                   key={post.id}

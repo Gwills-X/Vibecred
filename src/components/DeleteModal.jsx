@@ -2,8 +2,14 @@
 
 import { deletePostAction } from "@/actions/posts"; // Verified path linkage
 import { useState } from "react";
-
-export default function DeleteModal({ postId, show, setShow }) {
+import { deleteMediaAction } from "@/actions/storageActions";
+export default function DeleteModal({
+  postId,
+  publicId,
+  fileType,
+  show,
+  setShow,
+}) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [serverError, setServerError] = useState(null);
 
@@ -12,9 +18,13 @@ export default function DeleteModal({ postId, show, setShow }) {
     setServerError(null);
 
     try {
+      // Only attempt Cloudinary deletion if a publicId exists
+      if (publicId && publicId !== "null" && publicId !== "") {
+        await deleteMediaAction(publicId, fileType);
+      }
+      // 2. Delete Database Record
       const response = await deletePostAction(postId);
 
-      // If the Server Action didn't redirect and returned a validation error object instead:
       if (response && response.success === false) {
         setServerError(
           response.errors?.server?.[0] || "Failed to drop database record.",
@@ -22,14 +32,12 @@ export default function DeleteModal({ postId, show, setShow }) {
         setIsDeleting(false);
       }
     } catch (error) {
-      // Next.js internal redirects look like errors. Let them pass through natively!
       if (
         error.message === "NEXT_REDIRECT" ||
         error.digest?.includes("NEXT_REDIRECT")
       ) {
         throw error;
       }
-
       console.error("Delete Post Action Error Log:", error);
       setServerError("A critical network handshake error occurred.");
       setIsDeleting(false);
@@ -39,9 +47,9 @@ export default function DeleteModal({ postId, show, setShow }) {
   if (!show) return null;
 
   return (
-    <div className='fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in'>
+    <div className=' relative bg-slate-950/80 backdrop-blur-sm flex items-center justify-center  p-4 animate-fade-in'>
       {/* GLOWING WARNING CORE BOX */}
-      <div className='relative w-full max-w-md bg-slate-900/90 border border-slate-800/90 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5'>
+      <div className='absolute -top-70 w-full max-w-md bg-slate-900/90 border border-slate-800/90 z-100 rounded-2xl p-4 sm:p-4 shadow-2xl space-y-5'>
         {/* HEADER IDENTITY */}
         <div className='flex items-center space-x-3 text-rose-400'>
           <div className='w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center font-mono font-bold text-lg'>

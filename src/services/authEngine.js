@@ -51,4 +51,31 @@ export const authEngine = {
     });
     return generatedUserId;
   },
+
+  updateUserProfile: async (userId, userData) => {
+    // 🔍 DEBUG: Confirm the engine received the call
+    console.log("Engine: Routing update for user:", userId);
+
+    if (DRIVER_TOKEN === "MYSQL" || DRIVER_TOKEN === "DUAL_WRITE") {
+      const result = await mysqlUserRepo.updateMysqlUser(userId, userData);
+      // 🔍 DEBUG: See if the service returned a result
+      console.log("Engine: Service result:", result);
+      return result;
+    }
+  },
+
+  async getUserPassword(userId) {
+    const user = await mysqlUserRepo.getUserPassword(userId);
+    if (!user) throw new Error("User not found.");
+
+    return user.password;
+  },
+
+  async updatePassword(userId, newPassword) {
+    // 3. Hash and save via the mysqlService
+
+    await mysqlUserRepo.updatePassword(userId, newPassword);
+
+    return true;
+  },
 };

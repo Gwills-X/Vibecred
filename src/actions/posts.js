@@ -20,6 +20,7 @@ export async function createPosts(prevState, formData) {
   const mediaUrl = formData.get("mediaUrl") || null;
   const fileType = formData.get("fileType") || "none"; // Get from form
   const format = formData.get("format") || null; // Get from form
+  const publicId = formData.get("publicId") || null; // Get from form
 
   // 2. Conditional Schema Validation Rules
   if (!parentId) {
@@ -54,7 +55,7 @@ export async function createPosts(prevState, formData) {
         content: content,
         parentId: parentId,
       },
-      { mediaUrl, fileType, format },
+      { mediaUrl, fileType, format, publicId },
     );
   } catch (error) {
     console.error("Database Processing Error:", error);
@@ -87,6 +88,7 @@ export async function updatePostAction(postId, formData) {
   const title = formData.get("title");
   const content = formData.get("content");
   const mediaUrl = formData.get("mediaUrl"); // Capture new mediaUrl if updated
+  const publicId = formData.get("publicId"); // Capture new publicId if updated
 
   const validatedFields = BlogPostFormScheme.safeParse({ title, content });
   if (!validatedFields.success) {
@@ -123,7 +125,7 @@ export async function updatePostAction(postId, formData) {
 
     // Update media content if a new file was attached
     if (mediaUrl) {
-      await dataEngine.updatePostMedia(postId, mediaUrl);
+      await dataEngine.updatePostMedia(postId, mediaUrl, publicId);
     }
   } catch (error) {
     console.error("Database Modification Error:", error);

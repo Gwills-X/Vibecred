@@ -1,21 +1,18 @@
-// Change this:
-// import db from "@/lib/db";
-
-// To this (because you exported `query` as a named export):
 import { query } from "@/lib/db";
 
 export const socialEngine = {
+  // 1. Get statistics for the dashboard/network page
   async getFollowStats(userId) {
-    // Now use the `query` function directly
     const rows = await query(
       `SELECT 
         (SELECT COUNT(*) FROM follows WHERE followed_id = ?) as followers,
         (SELECT COUNT(*) FROM follows WHERE follower_id = ?) as following`,
       [userId, userId],
     );
-    return rows[0];
+    return rows[0] || { followers: 0, following: 0 };
   },
 
+  // 2. Toggle follow status
   async toggleFollow(followerId, targetId) {
     const existing = await query(
       "SELECT id FROM follows WHERE follower_id = ? AND followed_id = ?",
@@ -33,24 +30,42 @@ export const socialEngine = {
       return { status: "followed" };
     }
   },
-  // Add this method to your existing socialEngine object
-  // src/services/socialEngine.js
 
-  // src/services/socialEngine.js
-
+  // 3. Get suggested users (excludes current user)
   async getSuggestedUsers(currentUserId, limit = 5) {
-    const numericLimit = parseInt(limit, 10);
-
-    // This query finds users who have no match in the 'follows' table
-    // where the current user is the follower.
     return await query(
-      `SELECT u.id, u.name 
-     FROM users u
-     LEFT JOIN follows f ON u.id = f.followed_id AND f.follower_id = ?
-     WHERE u.id != ? AND f.id IS NULL
-     ORDER BY RAND() 
-     LIMIT ?`,
-      [currentUserId, currentUserId, numericLimit],
+      `SELECT u.id, u.name, u.bio, u.profile_pic_url,
+       EXISTS(SELECT 1 FROM follows WHERE follower_id = ? AND followed_id = u.id) as isFollowing
+       FROM users u
+       WHERE u.id != ?
+       ORDER BY RAND() 
+       LIMIT ?`,
+      [currentUserId, currentUserId, parseInt(limit, 10)],
     );
+  },
+
+  // 4. Get full profile details for the dedicated profile page
+  async getUserFullProfile(userId) {
+    const rows = await query(
+      "SELECT id, name, bio, profile_pic_url FROM users WHERE id = ?",
+      [userId],
+    );
+    return rows[0] || null;
+  },
+
+  // 5. Get posts for the dedicated profile page
+  async getUserPosts(userId) {
+    return await query(
+      "SELECT id, content, created_at FROM posts WHERE authorId = ? ORDER BY created_at DESC",
+      [userId],
+    );
+  },
+
+  async checkIfFollowing(followerId, targetId) {
+    const rows = await query(
+      "SELECT id FROM follows WHERE follower_id = ? AND followed_id = ?",
+      [followerId, targetId],
+    );
+    return rows.length > 0; // Returns true if a record exists
   },
 };

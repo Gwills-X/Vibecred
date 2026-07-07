@@ -3,7 +3,7 @@
 import { useActionState, useState, useRef } from "react";
 // Import your storage services and actions
 import { uploadMedia } from "@/services/storageService";
-import { deleteFromCloudinary } from "@/actions/storageActions";
+import { deleteMediaAction } from "@/actions/storageActions";
 
 export default function BlogPostForm({ handler }) {
   // Initialize state action for form submission tracking
@@ -15,11 +15,12 @@ export default function BlogPostForm({ handler }) {
 
   // State elements to capture Cloudinary upload metadata
   const [mediaUrl, setMediaUrl] = useState(null);
+  const [publicId, setPublicId] = useState(null); // 🌟 State to hold the publicId
   const [fileType, setFileType] = useState("none");
   const [format, setFormat] = useState(null);
   const [uploading, setUploading] = useState(false);
 
-  // Refs to manage DOM elements and asset tracking without triggering re-renders
+  // Refs to manage DOM elements and asset tracking
   const publicIdRef = useRef(null);
   const formRef = useRef(null);
 
@@ -36,22 +37,24 @@ export default function BlogPostForm({ handler }) {
       // Destructure data keys directly from your updated storageService layer
       const {
         url,
-        publicId,
+        publicId: uploadedPublicId, // 🌟 Renamed for clarity
         fileType: uploadedType,
         format: uploadedFormat,
       } = await uploadMedia(file);
 
       // Save to component state
       setMediaUrl(url);
-
-      // Ensure we extract the exact type (image, video, raw) from Cloudinary
+      setPublicId(uploadedPublicId); // 🌟 Update state with publicId
       setFileType(uploadedType || "none");
       setFormat(uploadedFormat || null);
 
       setUploading(false);
-      publicIdRef.current = publicId; // Track Cloudinary public ID for deletion rules
-      console.log("File uploaded successfully. Metadata:", {
+      publicIdRef.current = uploadedPublicId; // Track in Ref for reliable deletion
+
+      // 🌟 Explicit console log to verify capture
+      console.log("File uploaded successfully. Metadata captured:", {
         url,
+        publicId: uploadedPublicId,
         uploadedType,
         uploadedFormat,
       });
@@ -66,9 +69,10 @@ export default function BlogPostForm({ handler }) {
    */
   const handleRemoveImage = async () => {
     if (publicIdRef.current) {
-      await deleteFromCloudinary(publicIdRef.current);
+      await deleteMediaAction(publicIdRef.current, fileType);
     }
     setMediaUrl(null);
+    setPublicId(null); // 🌟 Clear state
     setFileType("none");
     setFormat(null);
     publicIdRef.current = null;
@@ -76,22 +80,22 @@ export default function BlogPostForm({ handler }) {
 
   /**
    * Intercepts standard form actions to manually force injection of metadata fields
-   * into the FormData object right before transmitting to the server action handler.
    */
   const handleSubmit = async (formData) => {
-    // Force set state values explicitly into FormData keys to bypass state race conditions
+    // Inject metadata fields including publicId into FormData
     formData.set("mediaUrl", mediaUrl || "");
+    formData.set("publicId", publicId || ""); // 🌟 Ensure this is sent to the server action
     formData.set("fileType", fileType || "none");
     formData.set("format", format || "");
 
     console.log("Transmitting complete payload state metadata package:", {
       title: formData.get("title"),
+      publicId: formData.get("publicId"), // 🌟 Log verification
       mediaUrl: formData.get("mediaUrl"),
       fileType: formData.get("fileType"),
       format: formData.get("format"),
     });
 
-    // Execute server action payload delivery
     await formAction(formData);
   };
 
@@ -101,7 +105,6 @@ export default function BlogPostForm({ handler }) {
   const renderPreview = () => {
     if (!mediaUrl) return null;
 
-    // Video Node Layout
     if (fileType === "video") {
       return (
         <video
@@ -112,7 +115,6 @@ export default function BlogPostForm({ handler }) {
       );
     }
 
-    // Document / Raw Data Payload Node Layout
     if (fileType === "raw") {
       return (
         <div className='flex items-center gap-3 p-4 bg-slate-950 border border-slate-800 rounded-lg'>
@@ -129,7 +131,6 @@ export default function BlogPostForm({ handler }) {
       );
     }
 
-    // Default Image Node Layout
     return (
       <img
         src={mediaUrl}
@@ -142,7 +143,7 @@ export default function BlogPostForm({ handler }) {
   return (
     <form
       ref={formRef}
-      action={handleSubmit} // Triggers interception layer to guarantee metadata inclusion
+      action={handleSubmit}
       className='max-w-2xl mx-auto pt-4 bg-slate-900 rounded-2xl shadow-xl border border-slate-800 space-y-6'>
       <div className='space-y-1 px-6'>
         <h2 className='text-2xl font-bold tracking-tight text-slate-100'>
@@ -152,13 +153,11 @@ export default function BlogPostForm({ handler }) {
           Share your latest insights and technical updates
         </p>
       </div>
-
       {state?.errors?.server && (
         <div className='mx-6 p-3 text-sm bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 font-mono'>
           {state.errors.server[0]}
         </div>
       )}
-
       {/* Title Input Field */}
       <div className='flex flex-col space-y-1.5 px-6'>
         <label htmlFor='title' className='text-sm font-medium text-slate-300'>
@@ -173,15 +172,7 @@ export default function BlogPostForm({ handler }) {
           className='w-full rounded-lg bg-slate-950 border border-slate-800 p-2.5 text-slate-100 outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm disabled:opacity-50'
           placeholder='Enter post title'
         />
-        {state?.errors?.title && (
-          <p className='text-rose-500 text-xs font-mono'>
-            {Array.isArray(state.errors.title)
-              ? state.errors.title[0]
-              : state.errors.title}
-          </p>
-        )}
       </div>
-
       {/* Content Input Field */}
       <div className='flex flex-col space-y-1.5 px-6'>
         <label htmlFor='content' className='text-sm font-medium text-slate-300'>
@@ -195,20 +186,13 @@ export default function BlogPostForm({ handler }) {
           disabled={isPending}
           className='w-full rounded-lg bg-slate-950 border border-slate-800 p-2.5 text-slate-100 outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm resize-none disabled:opacity-50'
           placeholder='Write your post content here...'></textarea>
-        {state?.errors?.content && (
-          <p className='text-rose-500 text-xs font-mono'>
-            {Array.isArray(state.errors.content)
-              ? state.errors.content[0]
-              : state.errors.content}
-          </p>
-        )}
       </div>
-
       {/* --- HIDDEN INJECTIONS FOR THE DATA PIPELINE BACKEND SYNC --- */}
       <input type='hidden' name='mediaUrl' value={mediaUrl || ""} />
+      <input type='hidden' name='publicId' value={publicId || ""} />{" "}
+      {/* 🌟 Added hidden input */}
       <input type='hidden' name='fileType' value={fileType || "none"} />
       <input type='hidden' name='format' value={format || ""} />
-
       {/* File Upload Configuration Layer */}
       <div className='space-y-2 px-6'>
         <label className='text-sm font-medium text-slate-300'>
@@ -234,7 +218,6 @@ export default function BlogPostForm({ handler }) {
               Payload Preview:
             </p>
 
-            {/* Render Preview Element dynamically depending on recognized type */}
             {renderPreview()}
 
             <button
@@ -246,7 +229,6 @@ export default function BlogPostForm({ handler }) {
           </div>
         )}
       </div>
-
       {/* Submission Control Core */}
       <div className='pt-2 px-6 pb-6'>
         <button

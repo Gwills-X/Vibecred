@@ -3,10 +3,14 @@ import NavLinks from "./NavLinks";
 import { logout } from "@/actions/auth";
 import MobileMenu from "./MobileMenu";
 import getAuthUser from "@/lib/getAuthUser";
-import { Home, FileText } from "lucide-react"; // Import icons
+import { Home, FileText } from "lucide-react";
+import Link from "next/link";
 
 const NavBar = async () => {
   const authUser = await getAuthUser();
+
+  // Default to 'guest' if not logged in
+  const userRole = authUser?.role || "guest";
 
   const LinksMarkup = ({ isMobile = false }) => (
     <ul
@@ -15,6 +19,33 @@ const NavBar = async () => {
           ? "flex flex-col gap-4 text-sm w-full"
           : "hidden md:flex items-center gap-6 text-xs"
       } font-mono uppercase tracking-wider text-slate-400 [&_li]:transition-colors [&_li]:duration-200`}>
+      {/* MOBILE IDENTITY SNAPSHOT */}
+      {isMobile && authUser && (
+        <li className='flex items-center gap-3 border-b border-slate-900 pb-4 mb-2'>
+          <div className='w-10 h-10 rounded-full border border-emerald-500/30 overflow-hidden shrink-0'>
+            {authUser?.profile_pic_url ? (
+              <img
+                src={authUser.profile_pic_url}
+                alt='Avatar'
+                className='w-full h-full object-cover'
+              />
+            ) : (
+              <div className='flex items-center justify-center h-full bg-slate-800 text-[10px] font-bold text-emerald-400'>
+                GW
+              </div>
+            )}
+          </div>
+          <div>
+            <div className='text-white font-bold text-sm truncate max-w-[150px]'>
+              {authUser?.name || "User"}
+            </div>
+            <div className='text-[10px] text-emerald-400 uppercase tracking-widest'>
+              {userRole}
+            </div>
+          </div>
+        </li>
+      )}
+
       {isMobile && (
         <li className='hover:text-slate-200 border-b border-slate-900 pb-2'>
           <NavLinks label='System Docs' href='/docs' />
@@ -23,6 +54,34 @@ const NavBar = async () => {
 
       {authUser ? (
         <>
+          {/* Admin Indicator */}
+          {userRole === "admin" && (
+            <li className='text-amber-400 font-bold tracking-widest text-[10px]'>
+              [ADMIN]
+            </li>
+          )}
+
+          {/* Desktop Profile Icon */}
+          {!isMobile && (
+            <li className='flex items-center'>
+              <Link
+                href='/dashboard/settings'
+                className='w-8 h-8 rounded-full border border-emerald-500/30 overflow-hidden hover:border-emerald-400 transition-all'>
+                {authUser?.profile_pic_url ? (
+                  <img
+                    src={authUser.profile_pic_url}
+                    alt='Avatar'
+                    className='w-full h-full object-cover'
+                  />
+                ) : (
+                  <div className='flex items-center justify-center h-full bg-slate-800 text-[10px] font-bold text-emerald-400'>
+                    GW
+                  </div>
+                )}
+              </Link>
+            </li>
+          )}
+
           <li className='hover:text-slate-200'>
             <NavLinks label='Dashboard' href='/dashboard' />
           </li>
@@ -41,6 +100,7 @@ const NavBar = async () => {
         </>
       ) : (
         <>
+          <li className='text-slate-600 italic tracking-widest'>[GUEST]</li>
           <li className='hover:text-slate-200 flex items-center'>
             <NavLinks label='Login' href='/login' />
           </li>
@@ -59,9 +119,7 @@ const NavBar = async () => {
   return (
     <header className='w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-900 sticky top-0 z-50 selection:bg-emerald-500/10 selection:text-emerald-400'>
       <nav className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative'>
-        {/* Left Side: Branding & Home */}
         <div className='flex items-center gap-6'>
-          {/* Logo Identity */}
           <div className='flex items-center gap-1.5'>
             <img
               src='/vibe cred.png'
@@ -74,7 +132,6 @@ const NavBar = async () => {
             </span>
           </div>
 
-          {/* Icon Nav */}
           <div className='flex items-center gap-4 text-slate-500'>
             <NavLinks
               href='/'
@@ -103,10 +160,8 @@ const NavBar = async () => {
           </div>
         </div>
 
-        {/* Right Side: Navigation Targets */}
         <LinksMarkup isMobile={false} />
 
-        {/* Mobile Flyout */}
         <MobileMenu>
           <LinksMarkup isMobile={true} />
         </MobileMenu>
